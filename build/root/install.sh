@@ -3,32 +3,32 @@
 # exit script if return code != 0
 set -e
 
-# release tag name from build arg, stripped of build ver using string manipulation
-release_tag_name="${1//-[0-9][0-9]/}"
+# release tag name from buildx arg, stripped of build ver using string manipulation
+RELEASETAG="${1}"
+
+# target arch from buildx arg
+TARGETARCH="${2}"
+
+if [[ -z "${RELEASETAG}" ]]; then
+	echo "[warn] Release tag name from build arg is empty, exiting script..."
+	exit 1
+fi
+
+if [[ -z "${TARGETARCH}" ]]; then
+	echo "[warn] Target architecture name from build arg is empty, exiting script..."
+	exit 1
+fi
+
+# write RELEASETAG to file to record the release tag used to build the image
+echo "IMAGE_RELEASE_TAG=${RELEASETAG}" >> '/etc/image-release'
 
 # note do NOT download build scripts - inherited from int script with envvars common defined
 
-# detect image arch
-####
-
-OS_ARCH=$(cat /etc/os-release | grep -P -o -m 1 "(?=^ID\=).*" | grep -P -o -m 1 "[a-z]+$")
-if [[ ! -z "${OS_ARCH}" ]]; then
-	if [[ "${OS_ARCH}" == "arch" ]]; then
-		OS_ARCH="x86-64"
-	else
-		OS_ARCH="aarch64"
-	fi
-	echo "[info] OS_ARCH defined as '${OS_ARCH}'"
-else
-	echo "[warn] Unable to identify OS_ARCH, defaulting to 'x86-64'"
-	OS_ARCH="x86-64"
-fi
+# get target arch from Dockerfile argument
+TARGETARCH="${2}"
 
 # pacman packages
 ####
-
-# hack - needs rsync for reflector
-pacman -S rsync --noconfirm
 
 # call pacman db and package updater script
 source upd.sh
